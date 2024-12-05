@@ -1,5 +1,7 @@
 import socket
 
+db = {}
+
 def server_program():
     host = 'localhost'  # 连接本地主机
     port = 3000         # 客户端需要与服务器使用相同的端口
@@ -22,8 +24,30 @@ def server_program():
             if not data:
                 # 如果数据为空，意味着连接已关闭
                 break
-            print(f"Received: {data}")
-            conn.send(data.encode())  # 发送数据到客户端
+
+            args = data.strip().split()
+            if not args:
+                conn.send(b'(error)')
+                continue
+
+            print(f"Received: {args}")
+
+            command = args[0].lower()
+            if command == 'get':
+                if len(args) != 2:
+                    conn.send(b'(error)')
+                    continue
+                key = args[1]
+                conn.send(db.get(key, "(nil)").encode())
+            elif command == 'set':
+                if len(args) != 3:
+                    conn.send(b'(error)')
+                    continue
+                key, value = args[1:]
+                db[key] = value
+                conn.send(b'OK')
+            else:
+                conn.send(b'(error)')
 
         conn.close()  # 关闭连接
         print("Connection closed")
